@@ -9,3 +9,5 @@ print('hellu')
 library(shiny)
 
 runExample("01_hello")
+
+runExample("10_download")
