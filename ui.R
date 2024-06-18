@@ -1,31 +1,66 @@
 library(shiny)
+library(tidyverse)
 
-
-checkbox_group <- \(aa) {
-  fluidRow(map(as.list(1:8), \(ii) {
-    column(1, checkboxInput(paste("dataset_", as.character(aa), "_box_", as.character(ii)), 
-                            label = as.character(ii), value = TRUE))
-    
-  }))
-}
+# Define the path to the directory containing the CSV files
+csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE)
+csv_names <- tools::file_path_sans_ext(basename(csv_files))
+data_list <- lapply(csv_files, read.csv)
 
 
 ui <- fluidPage(
   titlePanel("Cultivation Visualization"),
   fluidRow(
-    column(6, selectInput("dataset_1", label = "select cultivation 1", choices = list.files("data")),
-           helpText("Channels"),
-           checkbox_group(1)
+    column(3, selectInput("dataset_1", label = "select cultivation 1", choices = csv_names),
+           checkboxGroupInput("channels_1", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8))
     ),
-    column(6, selectInput("dataset_2", label = "select cultivation 2", choices = list.files("data")),
-           helpText("Channels"),
-           checkbox_group(2)
-    )
+    column(3, checkboxInput("split_1", "split")),
+    column(3, selectInput("dataset_2", label = "select cultivation 2", choices = csv_names),
+           checkboxGroupInput("channels_2", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8))
+    ),
+    column(3, checkboxInput("split_2", "split"))
+  ),
+  fluidRow(
+    column(6, plotOutput("plot_output_1", width = "600px", height = "300px")),
+    column(6, plotOutput("plot_output_2", width = "600px", height = "300px"))
   )
 )
 
 
+std_plot <- \(data, ch_id) {
+  tmp_df <- subset(aa, od_led == 720) %>% filter(channel_id %in% ch_id)
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
+   theme(legend.position = "top", legend.title = element_blank())
+  return(tmp)
+}
 
+split_plot <- \(data, ch_id) {
+  tmp_df <- subset(aa, od_led == 720) %>% filter(channel_id %in% ch_id)
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr)) + theme_bw() + geom_point() +
+    theme(legend.position = "top", legend.title = element_blank()) + facet_wrap(vars(channel_id), nrow = 4)
+  return(tmp)
+}
 
-server <- function(input,output){}
+server <- function(input, output){
+
+  split_2 <- reactive({input$split_2})
+  
+    #output$plot_output_1 <- renderPlot({split_plot(data = input$dataset_1(), ch_id = input$channels_1, split = split_1)})
+    
+    
+    output$plot_output_1 <- renderPlot({std_plot(data = input$dataset_1(), ch_id = input$channels_1)})
+    
+    
+    #output$plot_output_2 <- renderPlot({split_plot(data = input$dataset_2(), ch_id = input$channels_2, split = split_2)})
+  
+    
+    output$plot_output_2 <- renderPlot({
+      if (input$split_2 == TRUE) {
+        split_plot(data = input$dataset_2(), ch_id = input$channels_2)
+      } else {
+        std_plot(data = input$dataset_2(), ch_id = input$channels_2) 
+      }
+      })
+
+}
+
 shinyApp(ui=ui,server=server)
