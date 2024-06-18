@@ -18,7 +18,6 @@ ui <- fluidPage(
            checkboxGroupInput("channels_1", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)), # checkboxes to choose which channels to show for dataset 1
            sliderInput("x_lim_1", label = "Select x bar", min=0, max=200, value = c(0,100), step = NULL), 
            sliderInput("y_lim_1", label = "Select y bar", min=0, max=5, value = c(0,1), step = NULL)
-           
     ),
     column(3, selectInput("LED", label = "LED", choices = c(680, 720), multiple=TRUE), checkboxInput("split_1", "split")),
     column(3, selectInput("dataset_2", label = "select cultivation 2", choices = csv_names), # selection of the second (right) cultivation data set
