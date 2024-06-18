@@ -31,7 +31,7 @@ ui <- fluidPage(
 
 # function to create the standard cultivation plot (all channels in the same plot)
 std_plot <- \(data, ch_id) {
-  tmp_df <- subset(aa, od_led == 720) %>% filter(channel_id %in% ch_id)
+  tmp_df <- subset(data, od_led == 720) %>% filter(channel_id %in% ch_id)
   tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
    theme(legend.position = "top", legend.title = element_blank())
   return(tmp)
@@ -39,7 +39,7 @@ std_plot <- \(data, ch_id) {
 
 # function to create the split cultivation plot (one plot per channel)
 split_plot <- \(data, ch_id) {
-  tmp_df <- subset(aa, od_led == 720) %>% filter(channel_id %in% ch_id)
+  tmp_df <- subset(data, od_led == 720) %>% filter(channel_id %in% ch_id)
   tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr)) + theme_bw() + geom_point() +
     theme(legend.position = "top", legend.title = element_blank()) + facet_wrap(vars(channel_id), nrow = 4)
   return(tmp)
@@ -48,20 +48,24 @@ split_plot <- \(data, ch_id) {
 # creation of the server function
 server <- function(input, output){
   
+  data_1 <- reactive({data_list[[match(input$dataset_1, csv_names)]]})
+  
+  data_2 <- reactive({data_list[[match(input$dataset_2, csv_names)]]})
+  
   # Rendering of the plot from dataset 1 (left)
   output$plot_output_1 <- renderPlot({
     if (input$split_1 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = input$dataset_2(), ch_id = input$channels_1) # call the split plot function
+      split_plot(data = data_1(), ch_id = input$channels_1) # call the split plot function
     } else {
-      std_plot(data = input$dataset_2(), ch_id = input$channels_1) # call the standard plot function
+      std_plot(data = data_1(), ch_id = input$channels_1) # call the standard plot function
     }
   })
   
   output$plot_output_2 <- renderPlot({
     if (input$split_2 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = input$dataset_2(), ch_id = input$channels_2) # call the split plot function
+      split_plot(data = data_2(), ch_id = input$channels_2) # call the split plot function
     } else {
-      std_plot(data = input$dataset_2(), ch_id = input$channels_2) # call the standard plot function
+      std_plot(data = data_2(), ch_id = input$channels_2) # call the standard plot function
     }
   })
 }
