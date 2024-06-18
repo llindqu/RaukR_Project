@@ -6,7 +6,7 @@ csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE) #
 csv_names <- tools::file_path_sans_ext(basename(csv_files)) # extract the unique names of the files
 data_list <- lapply(csv_files, read.csv) # load all files into a list of data frames
 
-
+# Hej
 ## Creation of the UI
 
 ui <- fluidPage(
@@ -18,7 +18,7 @@ ui <- fluidPage(
     ),
     column(3, checkboxInput("split_1", "split")),
     column(3, selectInput("dataset_2", label = "select cultivation 2", choices = csv_names), # selection of the second (right) cultivation data set
-           checkboxGroupInput("channels_2", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)) # checkboxes to choose which channels to show for dataset 2
+           checkboxGroupInput("cxhannels_2", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)) # checkboxes to choose which channels to show for dataset 2
     ),
     column(3, checkboxInput("split_2", "split"))
   ),
