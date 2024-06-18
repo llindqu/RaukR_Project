@@ -1,0 +1,17 @@
+cols <- c("1" = "#14a73f", "2" = '#1ac658', "3" = '#29ea9e', "4" = '#3ae2f4', "5" = '#4beedd', "6" = '#2cb195', "7"="#0d744c", "8"="#1e543e")
+
+# function to create the standard cultivation plot (all channels in the same plot)
+std_plot <- \(data, ch_id) {
+  tmp_df <- subset(data, od_led == 720) %>% filter(channel_id %in% ch_id)
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
+   theme(legend.position = "top", legend.title = element_blank()) + scale_colour_manual(values = cols)
+  return(tmp)
+}
+
+# function to create the split cultivation plot (one plot per channel)
+split_plot <- \(data, ch_id) {
+  tmp_df <- subset(data, od_led == 720) %>% filter(channel_id %in% ch_id)
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
+    theme(legend.position = "top", legend.title = element_blank()) + facet_wrap(vars(channel_id), nrow = 4) + scale_colour_manual(values = cols)
+  return(tmp)
+}
