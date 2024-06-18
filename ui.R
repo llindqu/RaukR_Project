@@ -45,15 +45,15 @@ std_plot <- \(data, ch_id, LED, x_limit, y_limit) {
 }
 
 # function to create the split cultivation plot (one plot per channel)
-split_plot <- \(data, ch_id, LED) {
+split_plot <- \(data, ch_id, LED, x_limit, y_limit) {
   tmp_df <- subset(data, od_led == LED) %>% filter(channel_id %in% ch_id)
   tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
-    theme(legend.position = "top", legend.title = element_blank()) + facet_wrap(vars(channel_id), nrow = 4) + scale_colour_manual(values = cols)
+    theme(legend.position = "top", legend.title = element_blank()) + facet_wrap(vars(channel_id), nrow = 4) + scale_colour_manual(values = cols) + xlim(x_limit) + ylim(y_limit)
   return(tmp)
 }
 
 # creation of the server function
-server <- function(input, output, session){
+server <- function(input, output,session){
   
   data_1 <- reactive({data_list[[match(input$dataset_1, csv_names)]]})
   
@@ -62,8 +62,8 @@ server <- function(input, output, session){
   observe({
     x_max_1 <- ceiling(max(data_1()$batchtime_h))
     x_max_2 <- ceiling(max(data_2()$batchtime_h))
-    updateSliderInput(session, "x_lim_1", max = x_max_1+5, value = c(0,x_max_1))
-    updateSliderInput(session, "x_lim_2", max = x_max_2+5, value = c(0,x_max_2))
+    updateSliderInput(session, "x_lim_1", max = x_max_1, value = c(0,x_max_1))
+    updateSliderInput(session, "x_lim_2", max = x_max_2, value = c(0,x_max_2))
   })
   
   observe({
@@ -76,7 +76,7 @@ server <- function(input, output, session){
   # Rendering of the plot from dataset 1 (left)
   output$plot_output_1 <- renderPlot({
     if (input$split_1 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = data_1(), ch_id = input$channels_1, input$LED1) # call the split plot function
+      split_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1) # call the split plot function
     } else {
       std_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1) # call the standard plot function
     }
@@ -84,7 +84,7 @@ server <- function(input, output, session){
   
   output$plot_output_2 <- renderPlot({
     if (input$split_2 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = data_2(), ch_id = input$channels_2, input$LED2) # call the split plot function
+      split_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2) # call the split plot function
     } else {
       std_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2) # call the standard plot function
     }
