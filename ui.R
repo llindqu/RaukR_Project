@@ -17,11 +17,11 @@ ui <- fluidPage(
     column(3, selectInput("dataset_1", label = "select cultivation 1", choices = csv_names), # selection of the first (left) cultivation data set
            checkboxGroupInput("channels_1", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)) # checkboxes to choose which channels to show for dataset 1
     ),
-    column(3, selectInput("LED", label = "LED", choices = c(680, 720), multiple=TRUE), checkboxInput("split_1", "split")),
+    column(3, selectInput("LED1", label = "LED1", choices = c(680, 720), multiple=TRUE), checkboxInput("split_1", "split")),
     column(3, selectInput("dataset_2", label = "select cultivation 2", choices = csv_names), # selection of the second (right) cultivation data set
-           checkboxGroupInput("cxhannels_2", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)) # checkboxes to choose which channels to show for dataset 2
+           checkboxGroupInput("channels_2", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)) # checkboxes to choose which channels to show for dataset 2
     ),
-    column(3, selectInput("LED", label = "LED", choices = c(680, 720), multiple=TRUE), checkboxInput("split_2", "split"))
+    column(3, selectInput("LED2", label = "LED2", choices = c(680, 720), multiple=TRUE), checkboxInput("split_2", "split"))
   ),
   # the second row which displays the plots
   fluidRow(
@@ -58,17 +58,17 @@ server <- function(input, output){
   # Rendering of the plot from dataset 1 (left)
   output$plot_output_1 <- renderPlot({
     if (input$split_1 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = data_1(), ch_id = input$channels_1, input$LED) # call the split plot function
+      split_plot(data = data_1(), ch_id = input$channels_1, input$LED1) # call the split plot function
     } else {
-      std_plot(data = data_1(), ch_id = input$channels_1, input$LED) # call the standard plot function
+      std_plot(data = data_1(), ch_id = input$channels_1, input$LED1) # call the standard plot function
     }
   })
   
   output$plot_output_2 <- renderPlot({
     if (input$split_2 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = data_2(), ch_id = input$channels_2, input$LED) # call the split plot function
+      split_plot(data = data_2(), ch_id = input$channels_2, input$LED2) # call the split plot function
     } else {
-      std_plot(data = data_2(), ch_id = input$channels_2, input$LED) # call the standard plot function
+      std_plot(data = data_2(), ch_id = input$channels_2, input$LED2) # call the standard plot function
     }
   })
 }
