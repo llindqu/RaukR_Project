@@ -6,3 +6,5 @@ x_lim_working.R
 renv/
 .Rprofile
 renv.lock
+output1.gif
+output2.gif
