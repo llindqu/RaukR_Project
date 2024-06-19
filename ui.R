@@ -19,7 +19,11 @@ ui <- fluidPage(
   tags$style(HTML(".js-irs-3 .irs-single, .js-irs-3 .irs-bar-edge, .js-irs-3 .irs-bar {background: #b34295}")),
   tags$style(HTML(".js-irs-4 .irs-single, .js-irs-4 .irs-bar-edge, .js-irs-4 .irs-bar {background: #5457a0}")),
   tags$style(HTML(".js-irs-5 .irs-single, .js-irs-5 .irs-bar-edge, .js-irs-5 .irs-bar {background: #5457a0}")),
-  shinythemes::themeSelector(),  # <--- Add this somewhere in the UI
+  tags$style(HTML(".js-irs-6 .irs-single, .js-irs-6 .irs-bar-edge, .js-irs-6 .irs-bar {background: #3ae2f4}")),
+  tags$style(HTML(".js-irs-7 .irs-single, .js-irs-7 .irs-bar-edge, .js-irs-7 .irs-bar {background: #3ae2f4}")),
+  tags$style(HTML(".js-irs-8 .irs-single, .js-irs-8 .irs-bar-edge, .js-irs-8 .irs-bar {background: #b34295}")),
+  tags$style(HTML(".js-irs-9 .irs-single, .js-irs-9 .irs-bar-edge, .js-irs-9 .irs-bar {background: #b34295}")),
+  
   titlePanel("Cultivation Visualization"),
   # first row with fields to select cultivation data sets & checkboxes for channels
   fluidRow(theme = shinytheme("slate"),
@@ -29,7 +33,7 @@ ui <- fluidPage(
            ),
     column(3,  
            selectInput("LED1", label = "LED1", choices = c(680, 720), multiple=TRUE, selected=720), 
-           checkboxInput("split_1", "Split")
+           radioButtons("split_1", label = "Split", choiceNames = c("Yes","No"), choiceValues = c("Yes","No"), inline = TRUE, selected = "No")
            ),
     column(3, style = "background-color:#F9F0F7;", 
            selectInput("dataset_2", label = "Select cultivation 2", choices = csv_names), # selection of the second (right) cultivation data set
@@ -37,15 +41,14 @@ ui <- fluidPage(
            ),
     column(3, 
            selectInput("LED2", label = "LED2", choices = c(680, 720), multiple=TRUE, selected=720), 
-           helpText("Split"),
-           checkboxInput("split_2", "")
+           radioButtons("split_2", label = "Split", choiceNames = c("Yes","No"), choiceValues = c("Yes","No"), inline = TRUE, selected = "No")
            )
     ),
   fluidRow(
     column(3,sliderInput("x_lim_1", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL)),
-    column(3,sliderInput("y_lim_1", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.05)),
+    column(3,sliderInput("y_lim_1", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.005)),
     column(3,sliderInput("x_lim_2", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL)),
-    column(3,sliderInput("y_lim_2", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.05))
+    column(3,sliderInput("y_lim_2", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.005))
   ),
   
   fluidRow( 
@@ -70,7 +73,7 @@ ui <- fluidPage(
     fluidRow(style = "background-color:#E4E4F1;",
       column(3),
       column(3, align="center", sliderInput("x_lim_u", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL, width="100%")),
-      column(3, align="center", sliderInput("y_lim_u", label = "Y-axis range", min=0, max=5, value = c(0,1), step = NULL, width="100%")),
+      column(3, align="center", sliderInput("y_lim_u", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.005, width="100%")),
       column(3)
     )
   ),
@@ -79,9 +82,18 @@ ui <- fluidPage(
   
   # new row for growth rate plots
   fluidRow(
-    column(6, plotOutput("g_rate_1", width = "100%", height = "500px")), # plot from dataset 1 (left)
-    column(6, plotOutput("g_rate_2", width = "100%", height = "500px")) # plot from dataset 2 (right)
-  ),
+    column(6, plotOutput("g_rate_1", width = "100%", height = "500px"),
+           fluidRow(
+                    column(6, align="center", sliderInput("x_lim_gr_1", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL, width="100%")),
+                    column(6, align="center", sliderInput("y_lim_gr_1", label = "Y-axis range", min=0, max=1, value = c(0,0.2), step = 0.005, width="100%"))
+           )), # plot from dataset 1 (left)
+    column(6, plotOutput("g_rate_2", width = "100%", height = "500px"),
+           fluidRow(
+                    column(6, align="center", sliderInput("x_lim_gr_2", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL, width="100%")),
+                    column(6, align="center", sliderInput("y_lim_gr_2", label = "Y-axis range", min=0, max=1, value = c(0,0.2), step = 0.005, width="100%"))
+           ) # plot from dataset 2 (right)
+  )),
+  
   
   
   fluidRow(
@@ -186,6 +198,7 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
     guides(colour = guide_legend(nrow = 4, override.aes=list(size = 5))) +
     theme(legend.position = c(.95,.95), 
           legend.title = element_blank(),
+          legend.key.width=unit(1,"cm"),
           legend.justification = c("right", "top"),
           plot.title = element_text(size=20, hjust=0.5,face="bold"),
           axis.text = element_text(size = 10), 
@@ -204,7 +217,8 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
 
 gr_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
   
-  tmp_df <- subset(data, od_led == LED) %>% filter(channel_id %in% ch_id) %>% group_by(channel_id) %>% group_split()
+  tmp_df <- subset(data, od_led == LED & batchtime_h > x_limit[1] & batchtime_h < x_limit[2]) %>% 
+    filter(channel_id %in% ch_id) %>% group_by(channel_id) %>% group_split()
   
   df_chunk <- map(.x = tmp_df, .f = \(df) {
     
@@ -214,7 +228,7 @@ gr_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
     
     for (ii in 2:nrow(df)) {
       
-      if (df$od_raw[ii] < df$od_raw[[ii-1]] * 0.8 && chunk_count > 1) {
+      if (df$od_raw[ii] < df$od_raw[[ii-1]] * 0.95 && chunk_count > 1) {
         chunk_val <- chunk_val + 1
         chunk_count <- 0
       } 
@@ -284,29 +298,40 @@ server <- function(input, output,session){
   data_1 <- reactive({data_list[[match(input$dataset_1, csv_names)]]})
   data_2 <- reactive({data_list[[match(input$dataset_2, csv_names)]]})
   
-  observe({
+  observe({ #sliders for split&std plot (x)
     x_max_1 <- ceiling(max(data_1()$batchtime_h))
     x_max_2 <- ceiling(max(data_2()$batchtime_h))
     updateSliderInput(session, "x_lim_1", max = x_max_1, value = c(0,x_max_1))
     updateSliderInput(session, "x_lim_2", max = x_max_2, value = c(0,x_max_2))
   })
   
-  observe({
-    y_max_1 <- ceiling(max(data_1()$od_raw))
-    y_max_2 <- ceiling(max(data_2()$od_raw))
+  observe({ #sliders for split&std plot (y)
+    y_max_1 <- round(max(data_1()$od_raw),digits=0.1)+0.1
+    y_max_2 <- round(max(data_2()$od_raw),digits=0.1)+0.1
     updateSliderInput(session, "y_lim_1", max = y_max_1, value = c(0,y_max_1))
     updateSliderInput(session, "y_lim_2", max = y_max_2, value = c(0,y_max_2))
   })
   
-  observe({
+  observe({ #Sliders for united-plot
     x_max_u <- ceiling(max(c(data_1()$batchtime_h, data_2()$batchtime_h)))
-    y_max_u <- ceiling(max(c(data_1()$od_raw, data_2()$od_raw)))
+    y_max_u <- round(max(c(data_1()$od_raw, data_2()$od_raw)),digits=0.1)+0.1
     updateSliderInput(session, "x_lim_u", max = x_max_u, value = c(0,x_max_u))
     updateSliderInput(session, "y_lim_u", max = y_max_u, value = c(0,y_max_u))
   })
   
+  observe({ #Sliders for growth-rate-plot (x)
+    x_max_1 <- ceiling(max(data_1()$batchtime_h))
+    x_max_2 <- ceiling(max(data_2()$batchtime_h))
+    updateSliderInput(session, "x_lim_gr_1", max = x_max_1, value = c(0,x_max_1))
+    updateSliderInput(session, "x_lim_gr_2", max = x_max_2, value = c(0,x_max_2))
+  })
   
-  
+ # observe({ #Sliders for growth-rate-plot (y)
+#    y_max_1 <- round(max(data_1()$od_raw),digits=0.1)+0.1
+#    y_max_2 <- round(max(data_2()$od_raw),digits=0.1)+0.1
+#    updateSliderInput(session, "y_lim_gr_1", max = y_max_1, value = c(0,y_max_1))
+#    updateSliderInput(session, "y_lim_gr_2", max = y_max_2, value = c(0,y_max_2))
+#  })
   
   output$unite <- renderPlot({
     unite_plot(data_one = data_1(), data_two = data_2(), ch_id_one = input$channels_1, 
@@ -314,11 +339,11 @@ server <- function(input, output,session){
   })
   
   output$g_rate_1 <- renderPlot({
-    gr_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1, input$dataset_1) #placeholder
+    gr_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_gr_1, input$y_lim_gr_1, cols_1, input$dataset_1) #placeholder
   })
   
   output$g_rate_2 <- renderPlot({
-    gr_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2,input$dataset_2) #placeholder
+    gr_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_gr_2, input$y_lim_gr_2, cols_2,input$dataset_2) #placeholder
   })
   
   
@@ -344,7 +369,7 @@ server <- function(input, output,session){
     else {
       # Rendering of the plot from dataset 1 (left)
       output$plot_output_1 <- renderPlot({
-        if (input$split_1 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
+        if (input$split_1 == "Yes") { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
           split_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1, input$dataset_1) # call the split plot function
         } else {
           std_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1, input$dataset_1) # call the standard plot function
@@ -352,7 +377,7 @@ server <- function(input, output,session){
       })
       
       output$plot_output_2 <- renderPlot({
-        if (input$split_2 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
+        if (input$split_2 == "Yes") { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
           split_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2,input$dataset_2) # call the split plot function
         } else {
           std_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2, input$dataset_2) # call the standard plot function
