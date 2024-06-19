@@ -152,7 +152,7 @@ split_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
 
 
 # Cat plot function
-CAT_PLOT_ANIM <- function(data, LED){
+CAT_PLOT_ANIM <- function(data, LED, x_limit, y_limit){
   data <- subset(data, od_led == LED) %>% filter(channel_id %in% c(1:8))
   
   data$cat <- rep("nyancat", nrow(data))
@@ -165,7 +165,8 @@ CAT_PLOT_ANIM <- function(data, LED){
     theme_bw() +
     ggtitle("NyanobCateria") +
     ylab("Number of cats born") +
-    ylim(c(0,1.5)) +
+    ylim(y_limit) +
+    xlim(x_limit) +
     theme(legend.position = "none",
           plot.title = element_text(size=20, face="bold"),
           panel.background = element_rect(fill = "black"),
@@ -352,14 +353,14 @@ server <- function(input, output,session){
     if(input$cat_input){
       # CAT PLOT 1
       output$plot_output_1 <- renderImage({
-        p <- CAT_PLOT_ANIM(data=data_1(), input$LED1)
+        p <- CAT_PLOT_ANIM(data=data_1(), input$LED1, input$x_lim_1, input$y_lim_1)
         anim <- animate(p, fps = 10, width=1000, duration = 5, renderer = magick_renderer())
         anim_save("output1.gif", anim)
         list(src = "output1.gif", contentType = 'image/gif')
       }, deleteFile = FALSE)
       
       output$plot_output_2 <- renderImage({
-        p <- CAT_PLOT_ANIM(data=data_2(), input$LED2)
+        p <- CAT_PLOT_ANIM(data=data_2(), input$LED2, input$x_lim_2, input$y_lim_2)
         anim <- animate(p, fps = 10, width=1000, duration = 5, renderer = magick_renderer())
         anim_save("output2.gif", anim)
         list(src = "output2.gif", contentType = 'image/gif')
