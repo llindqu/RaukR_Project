@@ -11,7 +11,6 @@ csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE) #
 csv_names <- tools::file_path_sans_ext(basename(csv_files)) # extract the unique names of the files
 data_list <- lapply(csv_files, read.csv) # load all files into a list of data frames
 
-
 ui <- fluidPage(
   # All your styles will go here
   tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #3ae2f4}")),
@@ -198,6 +197,86 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
   return(tmp)
 }
 
+
+# function to create growth rate plot
+##
+
+gr_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
+  
+  tmp_df <- subset(data, od_led == LED) %>% filter(channel_id %in% ch_id) %>% group_by(channel_id) %>% group_split()
+  
+  df_chunk <- map(.x = tmp_df, .f = \(df) {
+    
+    df$chunk <- 1
+    chunk_val <- 1
+    chunk_count <- 1
+    
+    for (ii in 2:nrow(df)) {
+      
+      if (df$od_raw[ii] < df$od_raw[[ii-1]] * 0.8 && chunk_count > 1) {
+        chunk_val <- chunk_val + 1
+        chunk_count <- 0
+      } 
+      
+      if (chunk_count >= 20) {
+        chunk_val <- chunk_val + 1
+        chunk_count <- 0
+      }
+      
+      df$chunk[ii] <- chunk_val
+      
+      chunk_count <- chunk_count +1
+      
+    }
+    
+    return(df)
+    
+  })
+  
+  df_mu <- map(.x = df_chunk, .f = \(df) {
+    
+    df <- df %>% group_by(chunk) %>% group_split()
+    
+    tmp_mu <- map(.x = df, .f = \(df2) {
+      tmp_sum <- summary(lm(log(od_raw) ~ batchtime_h, df2))
+      tmp_df <- tibble(channel_id = df2$channel_id[1],
+                       batchtime_h = max(df2$batchtime_h),
+                       mu = tmp_sum$coefficients[2,1],
+                       r_squared = tmp_sum$adj.r.squared
+      )
+    }) %>% bind_rows()
+    
+    tmp_mu$left <- c(0, tmp_mu$batchtime_h[1:(nrow(tmp_mu)-1)])
+    
+    scale_factor <- max(tmp_mu$mu, na.rm = TRUE) / max(tmp_mu$r_squared, na.rm = TRUE)
+    
+    tmp_mu$r_squared <- tmp_mu$r_squared * scale_factor
+    
+    return(tmp_mu)
+    
+  }) %>% bind_rows()
+  
+  gr <- ggplot(df_mu) + theme_bw() + 
+    geom_rect(aes(xmin = left, xmax = batchtime_h, ymax = mu, ymin = 0, color = "white", fill = as.factor(channel_id)), alpha = 0.75) + 
+    geom_point(aes(x = batchtime_h, y = r_squared)) +
+    labs(title=heading, x="Time (h)", y="OD") + 
+    guides(fill = guide_legend(nrow = 1, override.aes=list(size = 5))) +
+    theme(legend.position = "top", 
+          strip.background = element_blank(), 
+          #legend.justification = c("right", "top"),
+          legend.title = element_blank(), 
+          plot.title = element_text(size=20, hjust=0.5, face="bold"),
+          axis.text = element_text(size = 10), 
+          axis.title = element_text(size=15),
+          legend.text = element_text(size = 15)) + 
+    facet_wrap(vars(channel_id), nrow = 4) + 
+    scale_fill_manual(values = cols) + scale_color_manual(values = c("white"), breaks = c()) + 
+    xlim(x_limit) + 
+    ylim(y_limit)
+  
+  return(gr)
+}
+
 # creation of the server function
 server <- function(input, output,session){
   
@@ -234,11 +313,11 @@ server <- function(input, output,session){
   })
   
   output$g_rate_1 <- renderPlot({
-    split_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1, input$dataset_1) #placeholder
+    gr_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1, input$dataset_1) #placeholder
   })
   
   output$g_rate_2 <- renderPlot({
-    split_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2,input$dataset_2) #placeholder
+    gr_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2,input$dataset_2) #placeholder
   })
   
   
@@ -284,31 +363,3 @@ server <- function(input, output,session){
 
 # run shiny app
 shinyApp(ui=ui,server=server)
-
-
-
-#df_1 <- data_list[[1]]
-#df_2 <- data_list[[2]]
-#channel_id_1 <- df_1$channel_id
-#channel_id_2 <- df_2$channel_id
-#LED <- 720
-#x_limit=c(0,120)
-#y_limit=c(0,7)
-#cols_unite <- c("1.1" = "#14a73f", "1.2" = '#1ac658', "1.3" = '#29ea9e', "1.4" = '#3ae2f4', "1.5" = '#4beedd', "1.6" = '#2cb195', "1.7" = "#0d744c", "1.8" = "#1e543e", "2.1" = "#f63c83", "2.2" = "#d9478c", "2.3" = "#a25395", "2.4" = "#b34295", "2.5" = "#844d9b", "2.6" = "#59609b", "2.7" = "#5457a0", "2.8" = "#2a48b7")
-#
-#unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED, x_limit, y_limit) {
-#  
-#  tmp_df_1 <- subset(data_one, od_led == LED) %>% filter(channel_id %in% ch_id_one)
-#  tmp_df_2 <- subset(data_two, od_led == LED) %>% filter(channel_id %in% ch_id_two)
-#  
-#  tmp_df_1$channel_id <- as.numeric(paste("1.", tmp_df_1$channel_id, sep = ""))
-#  tmp_df_2$channel_id <- as.numeric(paste("2.", tmp_df_2$channel_id, sep = ""))
-#  
-#  tmp_df <- rbind(tmp_df_1, tmp_df_2)
-#  
-#  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
-#    theme(legend.position = "top", legend.title = element_blank()) + scale_colour_manual(values = cols_unite) + xlim(x_limit) + ylim(y_limit)
-#  return(tmp)
-#}
-#
-#unite_plot(df_1, df_2, channel_id_1, channel_id_2, LED, x_limit, y_limit)
