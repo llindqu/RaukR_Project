@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 x_lim_working.R
+renv/
+.Rprofile
+renv.lock
