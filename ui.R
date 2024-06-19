@@ -12,9 +12,17 @@ data_list <- lapply(csv_files, read.csv) # load all files into a list of data fr
 # column(3, selectInput("LED", label = "LED", choices = c(680, 720), multiple=TRUE), checkboxInput("split_2", "split"))
 
 ui <- fluidPage(
+  # All your styles will go here
+  tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #3ae2f4}")),
+  tags$style(HTML(".js-irs-1 .irs-single, .js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #3ae2f4}")),
+  tags$style(HTML(".js-irs-2 .irs-single, .js-irs-2 .irs-bar-edge, .js-irs-2 .irs-bar {background: #b34295}")),
+  tags$style(HTML(".js-irs-3 .irs-single, .js-irs-3 .irs-bar-edge, .js-irs-3 .irs-bar {background: #b34295}")),
+  tags$style(HTML(".js-irs-4 .irs-single, .js-irs-4 .irs-bar-edge, .js-irs-4 .irs-bar {background: #5457a0}")),
+  tags$style(HTML(".js-irs-5 .irs-single, .js-irs-5 .irs-bar-edge, .js-irs-5 .irs-bar {background: #5457a0}")),
+  shinythemes::themeSelector(),  # <--- Add this somewhere in the UI
   titlePanel("Cultivation Visualization"),
   # first row with fields to select cultivation data sets & checkboxes for channels
-  fluidRow(
+  fluidRow(theme = shinytheme("slate"),
     column(3, selectInput("dataset_1", label = "Select cultivation 1", choices = csv_names), # selection of the first (left) cultivation data set
            checkboxGroupInput("channels_1", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)), # checkboxes to choose which channels to show for dataset 1
     ),
@@ -37,10 +45,12 @@ ui <- fluidPage(
     column(6, plotOutput("plot_output_2", width = "100%", height = "500px")) # plot from dataset 2 (right)
   ),
   fluidRow(
-    column(12, plotOutput("unite", width = "1200px", height = "600px")),
+    column(12, align="center", plotOutput("unite", width = "80%", height = "600px")),
     fluidRow(
-      column(6, sliderInput("x_lim_u", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL)),
-      column(6, sliderInput("y_lim_u", label = "Y-axis range", min=0, max=5, value = c(0,1), step = NULL))
+      column(3),
+      column(3, align="center", sliderInput("x_lim_u", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL, width="100%")),
+      column(3, align="center", sliderInput("y_lim_u", label = "Y-axis range", min=0, max=5, value = c(0,1), step = NULL, width="100%")),
+      column(3)
     )
   )
 )
