@@ -19,13 +19,13 @@ ui <- fluidPage(
            sliderInput("x_lim_1", label = "Select x bar", min=0, max=200, value = c(0,100), step = NULL), 
            sliderInput("y_lim_1", label = "Select y bar", min=0, max=5, value = c(0,1), step = NULL)
     ),
-    column(3, selectInput("LED1", label = "LED1", choices = c(680, 720), multiple=TRUE), checkboxInput("split_1", "split")),
+    column(3, selectInput("LED1", label = "LED1", choices = c(680, 720), multiple=TRUE, selected=720), checkboxInput("split_1", "split")),
     column(3, selectInput("dataset_2", label = "select cultivation 2", choices = csv_names), # selection of the second (right) cultivation data set
            checkboxGroupInput("channels_2", label = "Channels", choiceNames = c(1:8), choiceValues = c(1:8), inline = TRUE, selected = c(1:8)), # checkboxes to choose which channels to show for dataset 2
            sliderInput("x_lim_2", label = "Select x bar", min=0, max=200, value = c(0,100), step = NULL),
            sliderInput("y_lim_2", label = "Select y bar", min=0, max=5, value = c(0,1), step = NULL)
     ),
-    column(3, selectInput("LED2", label = "LED2", choices = c(680, 720), multiple=TRUE), checkboxInput("split_2", "split"))
+    column(3, selectInput("LED2", label = "LED2", choices = c(680, 720), multiple=TRUE, selected=720), checkboxInput("split_2", "split"))
   ),
   # the second row which displays the plots
   fluidRow(
@@ -120,29 +120,28 @@ shinyApp(ui=ui,server=server)
 
 
 
-df_1 <- data_list[[1]]
-df_2 <- data_list[[2]]
-channel_id_1 <- df_1$channel_id
-channel_id_2 <- df_2$channel_id
-LED <- 720
-x_limit=c(0,120)
-y_limit=c(0,7)
-cols_unite <- c("1.1" = "#14a73f", "1.2" = '#1ac658', "1.3" = '#29ea9e', "1.4" = '#3ae2f4', "1.5" = '#4beedd', "1.6" = '#2cb195', "1.7" = "#0d744c", "1.8" = "#1e543e", "2.1" = "#f63c83", "2.2" = "#d9478c", "2.3" = "#a25395", "2.4" = "#b34295", "2.5" = "#844d9b", "2.6" = "#59609b", "2.7" = "#5457a0", "2.8" = "#2a48b7")
-
-unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED, x_limit, y_limit) {
-  
-  tmp_df_1 <- subset(data_one, od_led == LED) %>% filter(channel_id %in% ch_id_one)
-  tmp_df_2 <- subset(data_two, od_led == LED) %>% filter(channel_id %in% ch_id_two)
-  
-  tmp_df_1$channel_id <- as.numeric(paste("1.", tmp_df_1$channel_id, sep = ""))
-  tmp_df_2$channel_id <- as.numeric(paste("2.", tmp_df_2$channel_id, sep = ""))
-  
-  tmp_df <- rbind(tmp_df_1, tmp_df_2)
-  
-  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
-    theme(legend.position = "top", legend.title = element_blank()) + scale_colour_manual(values = cols_unite) + xlim(x_limit) + ylim(y_limit)
-  return(tmp)
-}
-
-unite_plot(df_1, df_2, channel_id_1, channel_id_2, LED, x_limit, y_limit)
-  
+#df_1 <- data_list[[1]]
+#df_2 <- data_list[[2]]
+#channel_id_1 <- df_1$channel_id
+#channel_id_2 <- df_2$channel_id
+#LED <- 720
+#x_limit=c(0,120)
+#y_limit=c(0,7)
+#cols_unite <- c("1.1" = "#14a73f", "1.2" = '#1ac658', "1.3" = '#29ea9e', "1.4" = '#3ae2f4', "1.5" = '#4beedd', "1.6" = '#2cb195', "1.7" = "#0d744c", "1.8" = "#1e543e", "2.1" = "#f63c83", "2.2" = "#d9478c", "2.3" = "#a25395", "2.4" = "#b34295", "2.5" = "#844d9b", "2.6" = "#59609b", "2.7" = "#5457a0", "2.8" = "#2a48b7")
+#
+#unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED, x_limit, y_limit) {
+#  
+#  tmp_df_1 <- subset(data_one, od_led == LED) %>% filter(channel_id %in% ch_id_one)
+#  tmp_df_2 <- subset(data_two, od_led == LED) %>% filter(channel_id %in% ch_id_two)
+#  
+#  tmp_df_1$channel_id <- as.numeric(paste("1.", tmp_df_1$channel_id, sep = ""))
+#  tmp_df_2$channel_id <- as.numeric(paste("2.", tmp_df_2$channel_id, sep = ""))
+#  
+#  tmp_df <- rbind(tmp_df_1, tmp_df_2)
+#  
+#  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
+#    theme(legend.position = "top", legend.title = element_blank()) + scale_colour_manual(values = cols_unite) + xlim(x_limit) + ylim(y_limit)
+#  return(tmp)
+#}
+#
+#unite_plot(df_1, df_2, channel_id_1, channel_id_2, LED, x_limit, y_limit)
