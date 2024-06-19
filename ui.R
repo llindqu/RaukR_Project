@@ -43,9 +43,9 @@ ui <- fluidPage(
     ),
   fluidRow(
     column(3,sliderInput("x_lim_1", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL)),
-    column(3,sliderInput("y_lim_1", label = "Y-axis range", min=0, max=5, value = c(0,1), step = NULL)),
+    column(3,sliderInput("y_lim_1", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.05)),
     column(3,sliderInput("x_lim_2", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL)),
-    column(3,sliderInput("y_lim_2", label = "Y-axis range", min=0, max=5, value = c(0,1), step = NULL))
+    column(3,sliderInput("y_lim_2", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.05))
   ),
   
   fluidRow( 
@@ -91,6 +91,7 @@ ui <- fluidPage(
 cols_1 <- c("1" = "#14a73f", "2" = '#1ac658', "3" = '#29ea9e', "4" = '#3ae2f4', "5" = '#4beedd', "6" = '#2cb195', "7" = "#0d744c", "8" = "#1e543e")
 cols_2 <- c("1" = "#f63c83", "2" = "#d9478c", "3" = "#a25395", "4" = "#b34295", "5" = "#844d9b", "6" = "#59609b", "7" = "#5457a0", "8" = "#2a48b7")
 cols_unite <- c("1.1" = "#14a73f", "1.2" = '#1ac658', "1.3" = '#29ea9e', "1.4" = '#3ae2f4', "1.5" = '#4beedd', "1.6" = '#2cb195', "1.7" = "#0d744c", "1.8" = "#1e543e", "2.1" = "#f63c83", "2.2" = "#d9478c", "2.3" = "#a25395", "2.4" = "#b34295", "2.5" = "#844d9b", "2.6" = "#59609b", "2.7" = "#5457a0", "2.8" = "#2a48b7")
+nyan_cols <- c("1" = "#ED4242", "2" = '#FFEA47', "3" = '#68B84D', "4" = '#58F8B8', "5" = '#54B5FF', "6" = '#555BFF', "7" = "#AA71F3", "8" = "#FF86E7")
 
 # function to create the standard cultivation plot (all channels in the same plot)
 std_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
@@ -139,7 +140,7 @@ split_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
 
 
 # Cat plot function
-CAT_PLOT_ANIM <- function(data, cols, LED){
+CAT_PLOT_ANIM <- function(data, LED){
   data <- subset(data, od_led == LED) %>% filter(channel_id %in% c(1:8))
   
   data$cat <- rep("nyancat", nrow(data))
@@ -148,12 +149,16 @@ CAT_PLOT_ANIM <- function(data, cols, LED){
   cat_gif <- ggplot(data, aes(x=batchtime_h, y=od_corr, group=as.factor(channel_id), color=as.factor(channel_id))) +
     geom_line(linewidth=1) +
     geom_cat(aes(cat = cat), size = 3) +
-    scale_colour_manual(values = cols) +
+    scale_colour_manual(values = nyan_cols) +
     theme_bw() +
-    ggtitle("NyanoBcateria") +
+    ggtitle("NyanobCateria") +
     ylab("Number of cats born") +
+    ylim(c(0,1.5)) +
     theme(legend.position = "none",
-          plot.title = element_text(size=20, face="bold")) +
+          plot.title = element_text(size=20, face="bold"),
+          panel.background = element_rect(fill = "black"),
+          panel.grid.major = element_line(color = "white",linewidth = 1, linetype = "1F"),
+          panel.grid.minor = element_line(color = "white",linewidth = 0.5, linetype = "1F")) +
     transition_reveal(batchtime_h)
   return(cat_gif)
 }
@@ -242,14 +247,14 @@ server <- function(input, output,session){
     if(input$cat_input){
       # CAT PLOT 1
       output$plot_output_1 <- renderImage({
-        p <- CAT_PLOT_ANIM(data=data_1(), cols_1, input$LED1)
+        p <- CAT_PLOT_ANIM(data=data_1(), input$LED1)
         anim <- animate(p, fps = 10, width=1000, duration = 5, renderer = magick_renderer())
         anim_save("output1.gif", anim)
         list(src = "output1.gif", contentType = 'image/gif')
       }, deleteFile = FALSE)
       
       output$plot_output_2 <- renderImage({
-        p <- CAT_PLOT_ANIM(data=data_2(), cols_2, input$LED2)
+        p <- CAT_PLOT_ANIM(data=data_2(), input$LED2)
         anim <- animate(p, fps = 10, width=1000, duration = 5, renderer = magick_renderer())
         anim_save("output2.gif", anim)
         list(src = "output2.gif", contentType = 'image/gif')
