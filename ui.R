@@ -9,7 +9,7 @@ library(magick)
 ## Define the path to the directory containing the CSV files
 csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE) # list files in data folder
 csv_names <- tools::file_path_sans_ext(basename(csv_files)) # extract the unique names of the files
-data_list <- lapply(csv_files, read.csv) # load all files into a list of data frames
+data_list <- lapply(csv_files, read_csv) # load all files into a list of data frames
 
 ui <- fluidPage(
   # All your styles will go here
@@ -37,7 +37,8 @@ ui <- fluidPage(
            ),
     column(3, 
            selectInput("LED2", label = "LED2", choices = c(680, 720), multiple=TRUE, selected=720), 
-           checkboxInput("split_2", "Split")
+           helpText("Split"),
+           checkboxInput("split_2", "")
            )
     ),
   fluidRow(
@@ -95,7 +96,7 @@ nyan_cols <- c("1" = "#ED4242", "2" = '#FFEA47', "3" = '#68B84D', "4" = '#58F8B8
 # function to create the standard cultivation plot (all channels in the same plot)
 std_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
   tmp_df <- subset(data, od_led == LED) %>% filter(channel_id %in% ch_id)
-  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) +
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_raw, color = as.factor(channel_id))) +
     theme_bw() + 
     geom_point() + 
     labs(title=heading, x="Time (h)", y="OD") + 
@@ -117,7 +118,7 @@ std_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
 # function to create the split cultivation plot (one plot per channel)
 split_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
   tmp_df <- subset(data, od_led == LED) %>% filter(channel_id %in% ch_id)
-  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + 
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_raw, color = as.factor(channel_id))) + 
     theme_bw() + 
     geom_point() + 
     labs(title=heading, x="Time (h)", y="OD") + 
@@ -145,7 +146,7 @@ CAT_PLOT_ANIM <- function(data, LED){
   data$cat <- rep("nyancat", nrow(data))
   data$cat[data$channel_id == "1"] <- rep(c("pop_close", "pop"), 500)
   
-  cat_gif <- ggplot(data, aes(x=batchtime_h, y=od_corr, group=as.factor(channel_id), color=as.factor(channel_id))) +
+  cat_gif <- ggplot(data, aes(x=batchtime_h, y=od_raw, group=as.factor(channel_id), color=as.factor(channel_id))) +
     geom_line(linewidth=1) +
     geom_cat(aes(cat = cat), size = 3) +
     scale_colour_manual(values = nyan_cols) +
@@ -178,7 +179,7 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
   
   tmp_df <- rbind(tmp_df_1, tmp_df_2)
   
-  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + 
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_raw, color = as.factor(channel_id))) + 
     theme_bw() + 
     geom_point() + 
     labs(title="United plot", x="Time (h)", y="OD") +
@@ -291,15 +292,15 @@ server <- function(input, output,session){
   })
   
   observe({
-    y_max_1 <- ceiling(max(data_1()$od_corr))
-    y_max_2 <- ceiling(max(data_2()$od_corr))
+    y_max_1 <- ceiling(max(data_1()$od_raw))
+    y_max_2 <- ceiling(max(data_2()$od_raw))
     updateSliderInput(session, "y_lim_1", max = y_max_1, value = c(0,y_max_1))
     updateSliderInput(session, "y_lim_2", max = y_max_2, value = c(0,y_max_2))
   })
   
   observe({
     x_max_u <- ceiling(max(c(data_1()$batchtime_h, data_2()$batchtime_h)))
-    y_max_u <- ceiling(max(c(data_1()$od_corr, data_2()$od_corr)))
+    y_max_u <- ceiling(max(c(data_1()$od_raw, data_2()$od_raw)))
     updateSliderInput(session, "x_lim_u", max = x_max_u, value = c(0,x_max_u))
     updateSliderInput(session, "y_lim_u", max = y_max_u, value = c(0,y_max_u))
   })
