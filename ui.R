@@ -1,5 +1,6 @@
 library(shiny)
 library(tidyverse)
+library(shinythemes)
 
 ## Define the path to the directory containing the CSV files
 csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE) # list files in data folder
@@ -50,18 +51,52 @@ cols_unite <- c("1.1" = "#14a73f", "1.2" = '#1ac658', "1.3" = '#29ea9e', "1.4" =
 # function to create the standard cultivation plot (all channels in the same plot)
 std_plot <- \(data, ch_id, LED, x_limit, y_limit, cols) {
   tmp_df <- subset(data, od_led == LED) %>% filter(channel_id %in% ch_id)
-  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
-    theme(legend.position = "top", legend.title = element_blank()) + scale_colour_manual(values = cols) + xlim(x_limit) + ylim(y_limit)
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) +
+    theme_bw() + 
+    geom_point() + 
+    labs(title="Name of plot", x="Time (h)", y="OD") + 
+    guides(colour = guide_legend(nrow = 2, override.aes=list(size = 4))) + 
+    theme(legend.position = c(.95,.95), 
+          legend.title = element_blank(),
+          legend.justification = c("right", "top"),
+          plot.title = element_text(size=20, hjust=0.5),
+          axis.text = element_text(size = 10),
+          axis.title = element_text(size=15),
+          legend.text = element_text(size = 15)) + 
+    scale_colour_manual(values = cols) + 
+    xlim(x_limit) + 
+    ylim(y_limit)
   return(tmp)
 }
+
 
 # function to create the split cultivation plot (one plot per channel)
 split_plot <- \(data, ch_id, LED, x_limit, y_limit, cols) {
   tmp_df <- subset(data, od_led == LED) %>% filter(channel_id %in% ch_id)
-  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
-    theme(legend.position = "top", legend.title = element_blank()) + facet_wrap(vars(channel_id), nrow = 4) + scale_colour_manual(values = cols) + xlim(x_limit) + ylim(y_limit)
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + 
+    theme_bw() + 
+    geom_point() + 
+    labs(title="Split plot", x="Time (h)", y="OD") + 
+    guides(colour = guide_legend(nrow = 1, override.aes=list(size = 5))) +
+    theme(legend.position = "top", 
+          strip.background = element_blank(), 
+          #legend.justification = c("right", "top"),
+          legend.title = element_blank(), 
+          plot.title = element_text(size=20, hjust=0.5),
+          axis.text = element_text(size = 10), 
+          axis.title = element_text(size=15),
+          legend.text = element_text(size = 15)) + 
+    facet_wrap(vars(channel_id), nrow = 4) + 
+    scale_colour_manual(values = cols) + 
+    xlim(x_limit) + 
+    ylim(y_limit)
   return(tmp)
 }
+
+guides(color = guide_legend( 
+  override.aes=list(shape = 18)))
+
+#+theme(axis.text=element_text(size=20), legend.text = element_text(size=10))
 
 # function to create the united cultivation plot
 unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit, y_limit) {
@@ -74,8 +109,21 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
   
   tmp_df <- rbind(tmp_df_1, tmp_df_2)
   
-  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + theme_bw() + geom_point() +
-    theme(legend.position = "top", legend.title = element_blank()) + scale_colour_manual(values = cols_unite) + xlim(x_limit) + ylim(y_limit)
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_corr, color = as.factor(channel_id))) + 
+    theme_bw() + 
+    geom_point() + 
+    labs(title="United plot", x="Time (h)", y="OD") +
+    guides(colour = guide_legend(nrow = 4, override.aes=list(size = 5))) +
+    theme(legend.position = c(.95,.95), 
+          legend.title = element_blank(),
+          legend.justification = c("right", "top"),
+          plot.title = element_text(size=20, hjust=0.5),
+          axis.text = element_text(size = 10), 
+          axis.title = element_text(size=15),
+          legend.text = element_text(size = 15)) + 
+    scale_colour_manual(values = cols_unite) + 
+    xlim(x_limit) + 
+    ylim(y_limit) 
   return(tmp)
 }
 
