@@ -1,15 +1,16 @@
 library(shiny)
 library(tidyverse)
 library(shinythemes)
+library(ggcats)
+library(shinyWidgets)
+library(gganimate)
+library(magick)
 
 ## Define the path to the directory containing the CSV files
 csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE) # list files in data folder
 csv_names <- tools::file_path_sans_ext(basename(csv_files)) # extract the unique names of the files
 data_list <- lapply(csv_files, read.csv) # load all files into a list of data frames
 
-# checkboxInput('LED', label = 'LED', choices = c(680, 720))
-## Creation of the UI
-# column(3, selectInput("LED", label = "LED", choices = c(680, 720), multiple=TRUE), checkboxInput("split_2", "split"))
 
 ui <- fluidPage(
   # All your styles will go here
@@ -52,6 +53,9 @@ ui <- fluidPage(
       column(3, align="center", sliderInput("y_lim_u", label = "Y-axis range", min=0, max=5, value = c(0,1), step = NULL, width="100%")),
       column(3)
     )
+  ),
+  fluidRow(
+    column(12, checkboxInput("cat_input", label="cats?", value=FALSE))
   )
 )
 cols_1 <- c("1" = "#14a73f", "2" = '#1ac658', "3" = '#29ea9e', "4" = '#3ae2f4', "5" = '#4beedd', "6" = '#2cb195', "7" = "#0d744c", "8" = "#1e543e")
@@ -103,6 +107,27 @@ split_plot <- \(data, ch_id, LED, x_limit, y_limit, cols) {
   return(tmp)
 }
 
+
+# Cat plot function
+CAT_PLOT_ANIM <- function(data, cols, LED){
+  data <- subset(data, od_led == LED) %>% filter(channel_id %in% c(1:8))
+  
+  data$cat <- rep("nyancat", nrow(data))
+  data$cat[data$channel_id == "1"] <- rep(c("pop_close", "pop"), length.out = sum(data$channel_id == "1"))
+  
+  cat_gif <- ggplot(data, aes(x=batchtime_h, y=od_corr, color=as.factor(channel_id))) +
+    geom_line(linewidth=1) +
+    geom_cat(aes(cat = cat), size = 5) +
+    scale_colour_manual(values = cols) +
+    theme_bw() +
+    ggtitle("NyanoBcateria") +
+    ylab("Number of cats born") +
+    theme(legend.position = "none",
+          plot.title = element_text(size=20)) +
+    transition_reveal(batchtime_h)
+  return(cat_gif)
+}
+
 guides(color = guide_legend( 
   override.aes=list(shape = 18)))
 
@@ -141,7 +166,6 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
 server <- function(input, output,session){
   
   data_1 <- reactive({data_list[[match(input$dataset_1, csv_names)]]})
-  
   data_2 <- reactive({data_list[[match(input$dataset_2, csv_names)]]})
   
   observe({
@@ -164,25 +188,53 @@ server <- function(input, output,session){
     updateSliderInput(session, "x_lim_u", max = x_max_u, value = c(0,x_max_u))
     updateSliderInput(session, "y_lim_u", max = y_max_u, value = c(0,y_max_u))
   })
-  # Rendering of the plot from dataset 1 (left)
-  output$plot_output_1 <- renderPlot({
-    if (input$split_1 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1) # call the split plot function
-    } else {
-      std_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1) # call the standard plot function
-    }
-  })
   
-  output$plot_output_2 <- renderPlot({
-    if (input$split_2 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
-      split_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2) # call the split plot function
-    } else {
-      std_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2) # call the standard plot function
-    }
-  })
+  
+  
+  
   output$unite <- renderPlot({
     unite_plot(data_one = data_1(), data_two = data_2(), ch_id_one = input$channels_1, 
                ch_id_two = input$channels_2, input$LED1, input$LED2, input$x_lim_u, input$y_lim_u)
+  })
+  
+  
+  observe({
+    
+    if(input$cat_input){
+      # CAT PLOT 1
+      output$plot_output_1 <- renderImage({
+        p <- CAT_PLOT_ANIM(data=data_1(), cols_1, input$LED1)
+        anim <- animate(p, fps = 10, width=1000, duration = 5, renderer = magick_renderer())
+        anim_save("output1.gif", anim)
+        list(src = "output1.gif", contentType = 'image/gif')
+      }, deleteFile = FALSE)
+      
+      output$plot_output_2 <- renderImage({
+        p <- CAT_PLOT_ANIM(data=data_2(), cols_2, input$LED2)
+        anim <- animate(p, fps = 10, width=1000, duration = 5, renderer = magick_renderer())
+        anim_save("output2.gif", anim)
+        list(src = "output2.gif", contentType = 'image/gif')
+      }, deleteFile = FALSE)
+    }
+    
+    else {
+      # Rendering of the plot from dataset 1 (left)
+      output$plot_output_1 <- renderPlot({
+        if (input$split_1 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
+          split_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1) # call the split plot function
+        } else {
+          std_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_1, input$y_lim_1, cols_1) # call the standard plot function
+        }
+      })
+      
+      output$plot_output_2 <- renderPlot({
+        if (input$split_2 == TRUE) { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
+          split_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2) # call the split plot function
+        } else {
+          std_plot(data = data_2(), ch_id = input$channels_2, input$LED2, input$x_lim_2, input$y_lim_2, cols_2) # call the standard plot function
+        }
+      })
+    }
   })
 }
 
