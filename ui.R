@@ -68,13 +68,14 @@ ui <- fluidPage(
   ),
   fluidRow(HTML("<br><br>"),style = "background-color:#E4E4F1;"),
   
+  # third row for united plot display
   fluidRow(
     column(12, align="center", plotOutput("unite", width = "80%", height = "600px")),
     fluidRow(style = "background-color:#E4E4F1;",
       column(3),
       column(3, align="center", sliderInput("x_lim_u", label = "X-axis range", min=0, max=200, value = c(0,100), step = NULL, width="100%")),
       column(3, align="center", sliderInput("y_lim_u", label = "Y-axis range", min=0, max=5, value = c(0,1), step = 0.005, width="100%")),
-      column(3)
+      column(3, radioButtons("split_unite", label = "Split", choiceNames = c("Yes","No"), choiceValues = c("Yes","No"), inline = TRUE, selected = "No"))
     )
   ),
   
@@ -111,7 +112,7 @@ std_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
   tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_raw, color = as.factor(channel_id))) +
     theme_bw() + 
     geom_point() + 
-    labs(title=heading, x="Time (h)", y="OD") + 
+    labs(title = paste(heading, " - OD Plot", sep = ""), x = "Time (h)", y = "OD") + 
     guides(colour = guide_legend(nrow = 2, override.aes=list(size = 4))) + 
     theme(legend.position = c(.95,.95), 
           legend.title = element_blank(),
@@ -133,7 +134,7 @@ split_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
   tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_raw, color = as.factor(channel_id))) + 
     theme_bw() + 
     geom_point() + 
-    labs(title=heading, x="Time (h)", y="OD") + 
+    labs(title = paste(heading, " - OD Plot", sep = ""), x = "Time (h)", y = "OD") + 
     guides(colour = guide_legend(nrow = 1, override.aes=list(size = 5))) +
     theme(legend.position = "top", 
           strip.background = element_blank(), 
@@ -195,7 +196,7 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
   tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_raw, color = as.factor(channel_id))) + 
     theme_bw() + 
     geom_point() + 
-    labs(title="United plot", x="Time (h)", y="OD") +
+    labs(title = "United plot", x="Time (h)", y="OD") +
     guides(colour = guide_legend(nrow = 4, override.aes=list(size = 5))) +
     theme(legend.position = c(.95,.95), 
           legend.title = element_blank(),
@@ -212,10 +213,39 @@ unite_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit,
   return(tmp)
 }
 
+# function to create unite split plot
+unite_split_plot <- \(data_one, data_two, ch_id_one, ch_id_two, LED_1, LED_2, x_limit, y_limit) {
+  
+  tmp_df_1 <- subset(data_one, od_led == LED_1) %>% filter(channel_id %in% ch_id_one)
+  tmp_df_2 <- subset(data_two, od_led == LED_2) %>% filter(channel_id %in% ch_id_two)
+  
+  tmp_df_1$channel_id <- paste("1.", tmp_df_1$channel_id, sep = "")
+  tmp_df_2$channel_id <- paste("2.", tmp_df_2$channel_id, sep = "")
+  
+  tmp_df <- rbind(tmp_df_1, tmp_df_2) %>% separate(channel_id, into = c("cultivation", "channel"), sep = "\\.", remove = FALSE)
+  
+  tmp <- ggplot(tmp_df, aes(x = batchtime_h, y = od_raw, color = as.factor(channel_id))) + 
+    theme_bw() + 
+    geom_point() + 
+    labs(title="United plot", x = "Time (h)", y = "OD") +
+    guides(colour = guide_legend(nrow = 1, override.aes=list(size = 5))) +
+    theme(legend.position = "top", 
+          strip.background = element_blank(), 
+          #legend.justification = c("right", "top"),
+          legend.title = element_blank(), 
+          plot.title = element_text(size=20, hjust=0.5, face="bold"),
+          axis.text = element_text(size = 10), 
+          axis.title = element_text(size=15),
+          legend.text = element_text(size = 15)) + 
+    scale_colour_manual(values = cols_unite) + 
+    xlim(x_limit) + 
+    ylim(y_limit) +
+    facet_wrap(vars(channel), nrow = 4)
+  return(tmp)
+}
+
 
 # function to create growth rate plot
-##
-
 gr_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
   
   tmp_df <- subset(data, od_led == LED & batchtime_h > x_limit[1] & batchtime_h < x_limit[2]) %>% 
@@ -275,7 +305,7 @@ gr_plot <- \(data, ch_id, LED, x_limit, y_limit, cols, heading) {
   gr <- ggplot(df_mu) + theme_bw() + 
     geom_rect(aes(xmin = left, xmax = batchtime_h, ymax = mu, ymin = 0, color = "white", fill = as.factor(channel_id)), alpha = 0.75) + 
     geom_point(aes(x = batchtime_h, y = r_squared)) +
-    labs(title=heading, x="Time (h)", y="OD") + 
+    labs(title = paste(heading, " - Growth Rate", sep = ""), x = "Time (h)", y = "Growth Rate") + 
     guides(fill = guide_legend(nrow = 1, override.aes=list(size = 5))) +
     theme(legend.position = "top", 
           strip.background = element_blank(), 
@@ -334,10 +364,25 @@ server <- function(input, output,session){
 #    updateSliderInput(session, "y_lim_gr_2", max = y_max_2, value = c(0,y_max_2))
 #  })
   
+  #output$unite <- renderPlot({
+  #  unite_split_plot(data_one = data_1(), data_two = data_2(), ch_id_one = input$channels_1, 
+  #             ch_id_two = input$channels_2, input$LED1, input$LED2, input$x_lim_u, input$y_lim_u)
+  #})
+  
+  
+  
   output$unite <- renderPlot({
-    unite_plot(data_one = data_1(), data_two = data_2(), ch_id_one = input$channels_1, 
-               ch_id_two = input$channels_2, input$LED1, input$LED2, input$x_lim_u, input$y_lim_u)
+    if (input$split_unite == "Yes") { # if the split checkbox is checked, use the split plot function, otherwise use the standard plot function
+      unite_split_plot(data_one = data_1(), data_two = data_2(), ch_id_one = input$channels_1, 
+                       ch_id_two = input$channels_2, input$LED1, input$LED2, input$x_lim_u, input$y_lim_u) # call the split plot function
+    } else {
+      unite_plot(data_one = data_1(), data_two = data_2(), ch_id_one = input$channels_1, 
+                       ch_id_two = input$channels_2, input$LED1, input$LED2, input$x_lim_u, input$y_lim_u) # call the standard plot function
+    }
   })
+  
+  
+  
   
   output$g_rate_1 <- renderPlot({
     gr_plot(data = data_1(), ch_id = input$channels_1, input$LED1, input$x_lim_gr_1, input$y_lim_gr_1, cols_1, input$dataset_1) #placeholder
